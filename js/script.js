@@ -1,80 +1,95 @@
-var questions = [
+const questions = [
     {
         'sentence': 'She is eating an apple and they are eating bread',
         'answer': 'sie isst einen apfel und sie essen brot',
         'choices': [
-            'esst', 'brot', 'essen', 'apfel', 'sie', 'und', 'sie', 'isst', 'einen', 'sie'
+            'esse', 'esst', 'brot', 'essen', 'apfel', 'sie', 'und', 'sie', 'isst', 'einen', 'sie'
         ]
     }
-]
+];
+const currentQuestion = questions[0];
 
-var sentence = document.getElementById('sentence'),
-    answerContainer = document.querySelector('.answer-container'),
-    choicesContainer = document.querySelector('.choices-container'),
-    checkBtn = document.getElementById('check'),
-    msg = document.getElementById('msg'),
-    currentQuestion = questions[0];
+var sentence = document.getElementById('sentence')
+var choicesContainer = document.querySelector('.choices');
+var answerContainer = document.querySelector('.answer-container');
+var choicesSlots;
+var choices;
 
 function init() {
-    sentence.innerHTML = currentQuestion['sentence']
-    currentQuestion['choices'].forEach((choice) => {
-        element = document.createElement('span');
-        element.className = 'choice';
-        element.innerHTML = choice;
-        choicesContainer.appendChild(element);
-    });
+    sentence.innerText = currentQuestion['sentence'];
+
+    for (let i = 0; i < currentQuestion['choices'].length + 1; i++) {
+        let slot = document.createElement('div');
+        slot.className = 'slot';
+        answerContainer.appendChild(slot);
+
+        slot = slot.cloneNode(true);
+        slot.dataset.id = i;
+        choicesContainer.appendChild(slot);
+    }
+
+    choicesSlots = document.querySelectorAll('.choices .slot');
+
+    for (let i = 0; i < currentQuestion['choices'].length; i++) {
+        const slot = choicesSlots[i];
+
+        let choice = document.createElement('span');
+        choice.classList.add('choice');
+        choice.dataset.id = slot.dataset.id;
+        choice.dataset.y = 0;
+        choice.dataset.x = 0;
+        choice.dataset.sticked = false;
+        choice.innerText = currentQuestion['choices'][i];
+        slot.appendChild(choice);
+
+        choice.addEventListener('mousedown', () => {
+            choice.dataset.sticked = false;
+        });
+    }
+
+    choices = document.querySelectorAll('.choices-container .choice');
 }
 
 init();
 
-var choices = document.querySelectorAll('.choice');
-
-choices.forEach((choice) => {
-    choice.addEventListener('click', (e) => {
-        choice.parentElement == choicesContainer ? _moveTo(answerContainer, choice) : _moveTo(choicesContainer, choice)
-    });
+interact('.choice').draggable({
+    listeners: {
+        move: dragMoveListener,
+    }
 });
 
-function _moveTo(dest, element) {
-    let nextPos = getNextPosition(element, dest);
+function dragMoveListener (event) {
+    var target = event.target
 
-    element.style.transform = `translate(${nextPos[0]}px, ${nextPos[1]}px)`;
-
-    setTimeout(() => {
-        dest.appendChild(element);
-        element.style.transform =  "";
-    }, 500);
+    if (target.dataset.sticked == "false") {
+        var x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
+        var y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
+    
+        // translate the element
+        target.style.transform = 'translate(' + x + 'px, ' + y + 'px)'
+    
+        // update the posiion attributes
+        target.setAttribute('data-x', x)
+        target.setAttribute('data-y', y)
+    }
 }
 
-function getNextPosition(element, parent) {
-    let newElement = element.cloneNode(true)
-    newElement.style.opacity = '0';
-    parent.appendChild(newElement);
+interact('.slot').dropzone({
+    accept: '.choice',
+    overlap: 0.5,
 
-    let pos = [
-        newElement.offsetLeft - element.offsetLeft,
-        newElement.offsetTop - element.offsetTop
-    ];
-    parent.removeChild(newElement);
+    ondrop: (event) => {
+        console.log('dragged');
+        
+        let slot = event.target;
+        let choice = event.relatedTarget;
 
-    return pos;
-}
-
-checkBtn.addEventListener('click', (e) => {
-    let userAnswer = [];
-    let answers = answerContainer.querySelectorAll('.choice');
-
-    answers.forEach(element => {
-        userAnswer.push(element.innerText);
-    });
-
-    msg.style.opacity = '1';
-
-    if (userAnswer.join(' ') == currentQuestion['answer']) {
-        msg.innerText = 'Good work!';
-        msg.classList.add('success');
-    } else {
-        msg.innerText = 'Something wrong!';
-        msg.classList.remove('success');
+        if (!slot.hasChildNodes()) {
+            choice.dataset.x = 0;
+            choice.dataset.y = 0;
+            choice.style.transform = "";
+            choice.dataset.sticked = true;
+            slot.appendChild(choice);
+        }
     }
 });
