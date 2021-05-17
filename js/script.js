@@ -15,15 +15,14 @@ var answerContainer = document.querySelector('.answer-container');
 var choicesSlots;
 var choices;
 
+var mouseInAnswers = false;
+
 function init() {
     sentence.innerText = currentQuestion['sentence'];
 
     for (let i = 0; i < currentQuestion['choices'].length + 1; i++) {
         let slot = document.createElement('div');
         slot.className = 'slot';
-        answerContainer.appendChild(slot);
-
-        slot = slot.cloneNode(true);
         slot.dataset.id = i;
         choicesContainer.appendChild(slot);
     }
@@ -74,10 +73,11 @@ function dragMoveListener(event) {
 }
 
 function drageEndListener(event) {
-    console.log('ended');
-
     if (event.target.dataset.sticked == "false") {
-        moveToParent(event.target);
+        if (!mouseInAnswers) {
+            _moveTo(event.target);
+
+        }
     }
 }
 
@@ -99,19 +99,42 @@ interact('.slot').dropzone({
     }
 });
 
-function moveToParent(element) {
-    let id = element.dataset.id;
-    let parent = document.querySelector(`.slot[data-id="${id}"]`);
+interact('.answer-container').dropzone({
+    ondrop: () => {
+        mouseInAnswers = true;
+    },
+    ondragleave: () => mouseInAnswers = false,
+});
 
-    let x = parent.offsetLeft - element.offsetLeft ;
-    let y = parent.offsetTop - element.offsetTop;
+answerContainer.onmouseleave = () => mouseInAnswers = false;
+
+
+function _moveTo(element, dest=null) {
+    let id = element.dataset.id;
+    if (dest == null) {
+        dest = document.querySelector(`.slot[data-id="${id}"]`);
+        if (dest.hasChildNodes()) {
+            dest = element.parentElement;
+        }
+    }
+
+    let x = dest.offsetLeft - element.offsetLeft ;
+    let y = dest.offsetTop - element.offsetTop;
 
     element.style.transition = "0.5s";
     element.style.transform = `translate(${x}px, ${y}px)`;
 
     element.ontransitionend = (e) => {
-        parent.appendChild(element);
+        dest.appendChild(element);
+        element.dataset.x = 0;
+        element.dataset.y = 0;
         element.style.transition = "none";
         element.style.transform = "";
     }
+}
+
+function createSlot() {
+    let slot = document.createElement('div');
+    slot.className = 'slot';
+    return slot;
 }
