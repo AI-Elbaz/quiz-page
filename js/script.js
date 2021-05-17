@@ -76,7 +76,6 @@ function drageEndListener(event) {
     if (event.target.dataset.sticked == "false") {
         if (!mouseInAnswers) {
             _moveTo(event.target);
-
         }
     }
 }
@@ -100,14 +99,14 @@ interact('.slot').dropzone({
 });
 
 interact('.answer-container').dropzone({
-    ondrop: () => {
+    ondrop: (event) => {
         mouseInAnswers = true;
+        event.target.appendChild(event.relatedTarget);
     },
     ondragleave: () => mouseInAnswers = false,
 });
 
 answerContainer.onmouseleave = () => mouseInAnswers = false;
-
 
 function _moveTo(element, dest=null) {
     let id = element.dataset.id;
