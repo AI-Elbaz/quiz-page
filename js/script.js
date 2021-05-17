@@ -101,7 +101,13 @@ interact('.slot').dropzone({
 interact('.answer-container').dropzone({
     ondrop: (event) => {
         mouseInAnswers = true;
-        event.target.appendChild(event.relatedTarget);
+
+        let choice = event.relatedTarget;
+        choice.style.transform = "";
+        choice.dataset.x = 0;
+        choice.dataset.y = 0;
+
+        event.target.appendChild(choice);
     },
     ondragleave: () => mouseInAnswers = false,
 });
