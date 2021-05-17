@@ -52,25 +52,32 @@ function init() {
 
 init();
 
-interact('.choice').draggable({
+var draggability = interact('.choice').draggable({
     listeners: {
         move: dragMoveListener,
+        end: drageEndListener,
     }
 });
 
-function dragMoveListener (event) {
+function dragMoveListener(event) {
     var target = event.target
 
     if (target.dataset.sticked == "false") {
         var x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
         var y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
     
-        // translate the element
         target.style.transform = 'translate(' + x + 'px, ' + y + 'px)'
     
-        // update the posiion attributes
         target.setAttribute('data-x', x)
         target.setAttribute('data-y', y)
+    }
+}
+
+function drageEndListener(event) {
+    console.log('ended');
+
+    if (event.target.dataset.sticked == "false") {
+        moveToParent(event.target);
     }
 }
 
@@ -79,8 +86,6 @@ interact('.slot').dropzone({
     overlap: 0.5,
 
     ondrop: (event) => {
-        console.log('dragged');
-        
         let slot = event.target;
         let choice = event.relatedTarget;
 
@@ -93,3 +98,20 @@ interact('.slot').dropzone({
         }
     }
 });
+
+function moveToParent(element) {
+    let id = element.dataset.id;
+    let parent = document.querySelector(`.slot[data-id="${id}"]`);
+
+    let x = parent.offsetLeft - element.offsetLeft ;
+    let y = parent.offsetTop - element.offsetTop;
+
+    element.style.transition = "0.5s";
+    element.style.transform = `translate(${x}px, ${y}px)`;
+
+    element.ontransitionend = (e) => {
+        parent.appendChild(element);
+        element.style.transition = "none";
+        element.style.transform = "";
+    }
+}
