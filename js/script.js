@@ -93,8 +93,6 @@ interact('.slot').dropzone({
             slot.appendChild(choice);
             choice.dataset.sticked = true;
         }
-
-        answerContainer.querySelectorAll('.slot:empty').forEach(e => e.remove());
     }
 });
 
@@ -167,13 +165,14 @@ function _moveTo(element, dest=null) {
         y -= py;
     }
 
-    element.style.transition = '0.5s';
+    element.style.transition = '300ms';
     element.style.transform = `translate(${x}px, ${y}px)`;
 
     element.ontransitionend = () => {
         element.dataset.sticked = true;
         dest.appendChild(element);
         reset(element);
+        answerContainer.querySelectorAll('.slot:empty').forEach(e => e.remove());
     }
 }
 
