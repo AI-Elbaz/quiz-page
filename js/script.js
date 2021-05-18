@@ -143,6 +143,9 @@ checkBtn.addEventListener('click', () => {
 
 function _moveTo(element, dest=null) {
     let id = element.dataset.id;
+    let x, y;
+    let px = answerContainer.offsetLeft;
+    let py = answerContainer.offsetTop;
 
     if (dest == null) {
         dest = document.querySelector(`.slot[data-id="${id}"]`);
@@ -151,10 +154,18 @@ function _moveTo(element, dest=null) {
         }
     }
 
-    let x = dest.offsetLeft - element.offsetLeft;
-    let y = dest.offsetTop - element.offsetTop;
+    x = dest.offsetLeft - element.offsetLeft;
+    y = dest.offsetTop - element.offsetTop;
 
-    console.log(x, y);
+    if (dest.parentElement == answerContainer) {
+        x += px;
+        y += py;
+    }
+
+    if (element.parentElement.parentElement == answerContainer) {
+        x -= px;
+        y -= py;
+    }
 
     element.style.transition = '0.5s';
     element.style.transform = `translate(${x}px, ${y}px)`;
