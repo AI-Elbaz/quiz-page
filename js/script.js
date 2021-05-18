@@ -7,51 +7,51 @@ const questions = [
         ]
     }
 ];
+
 const currentQuestion = questions[0];
+let choicesContainer = document.querySelector('.choices');
+let answerContainer = document.querySelector('.answer-container');
+let sentence = document.getElementById('sentence')
+let checkBtn = document.getElementById('check');
+let msg = document.getElementById('msg');
+let choices;
+let choicesSlots = [];
+let mouseInAnswers = false;
 
-var sentence = document.getElementById('sentence')
-var choicesContainer = document.querySelector('.choices');
-var answerContainer = document.querySelector('.answer-container');
-var choicesSlots;
-var choices;
+sentence.innerText = currentQuestion['sentence'];
 
-var mouseInAnswers = false;
+for (let i = 0; i < currentQuestion['choices'].length + 1; i++) {
+    let slot = createElement('div', {
+        'class': 'slot',
+        'data-id': i
+    });
 
-function init() {
-    sentence.innerText = currentQuestion['sentence'];
-
-    for (let i = 0; i < currentQuestion['choices'].length + 1; i++) {
-        let slot = document.createElement('div');
-        slot.className = 'slot';
-        slot.dataset.id = i;
-        choicesContainer.appendChild(slot);
-    }
-
-    choicesSlots = document.querySelectorAll('.choices .slot');
-
-    for (let i = 0; i < currentQuestion['choices'].length; i++) {
-        const slot = choicesSlots[i];
-
-        let choice = document.createElement('span');
-        choice.classList.add('choice');
-        choice.dataset.id = slot.dataset.id;
-        choice.dataset.y = 0;
-        choice.dataset.x = 0;
-        choice.dataset.sticked = false;
-        choice.innerText = currentQuestion['choices'][i];
-        slot.appendChild(choice);
-
-        choice.addEventListener('mousedown', () => {
-            choice.dataset.sticked = false;
-        });
-    }
-
-    choices = document.querySelectorAll('.choices-container .choice');
+    choicesContainer.appendChild(slot);
+    choicesSlots.push(slot);
 }
 
-init();
+for (let i = 0; i < currentQuestion['choices'].length; i++) {
+    const slot = choicesSlots[i];
 
-var draggability = interact('.choice').draggable({
+    let choice = createElement('span', {
+        'class': 'choice',
+        'data-id': slot.dataset.id,
+        'data-x': 0,
+        'data-y': 0,
+        'data-sticked': false
+    });
+
+    choice.innerText = currentQuestion['choices'][i];
+    slot.appendChild(choice);
+
+    choice.addEventListener('mousedown', () => {
+        choice.dataset.sticked = false;
+    });
+}
+// 
+choices = choicesContainer.querySelectorAll('.choice');
+
+let draggability = interact('.choice').draggable({
     listeners: {
         move: dragMoveListener,
         end: drageEndListener,
@@ -59,11 +59,11 @@ var draggability = interact('.choice').draggable({
 });
 
 function dragMoveListener(event) {
-    var target = event.target
+    let target = event.target
 
     if (target.dataset.sticked == "false") {
-        var x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
-        var y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
+        let x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx
+        let y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy
     
         target.style.transform = 'translate(' + x + 'px, ' + y + 'px)'
     
@@ -89,12 +89,12 @@ interact('.slot').dropzone({
         let choice = event.relatedTarget;
 
         if (!slot.hasChildNodes()) {
-            choice.dataset.x = 0;
-            choice.dataset.y = 0;
-            choice.style.transform = "";
-            choice.dataset.sticked = true;
+            reset(choice)
             slot.appendChild(choice);
+            choice.dataset.sticked = true;
         }
+
+        answerContainer.querySelectorAll('.slot:empty').forEach(e => e.remove());
     }
 });
 
@@ -102,20 +102,48 @@ interact('.answer-container').dropzone({
     ondrop: (event) => {
         mouseInAnswers = true;
 
-        let choice = event.relatedTarget;
-        choice.style.transform = "";
-        choice.dataset.x = 0;
-        choice.dataset.y = 0;
+        let slots = answerContainer.querySelectorAll('.slot:empty');
+        let slot;
 
-        event.target.appendChild(choice);
+        if (event.relatedTarget.parentElement.parentElement != answerContainer) {
+            if (slots.length == 0) {
+                slot = createElement('div', {'class':'slot'});
+                event.target.appendChild(slot);
+            }
+    
+            else {
+                slot = slots[0]
+            }
+        }
+
+        _moveTo(event.relatedTarget, slot);
     },
     ondragleave: () => mouseInAnswers = false,
 });
 
 answerContainer.onmouseleave = () => mouseInAnswers = false;
 
+checkBtn.addEventListener('click', () => {
+    let answers = answerContainer.querySelectorAll('.choice');
+    let answer = [];
+
+    answers.forEach((e) => answer.push(e.innerText));
+
+    if (answer.join(" ") == currentQuestion['answer']) {
+        msg.innerText = "Good work!";
+        msg.classList.add('success');
+
+    } else {
+        msg.innerText = "Something wrong!";
+        msg.classList.remove('success');
+    }
+
+    msg.style.opacity = "1";
+});
+
 function _moveTo(element, dest=null) {
     let id = element.dataset.id;
+
     if (dest == null) {
         dest = document.querySelector(`.slot[data-id="${id}"]`);
         if (dest.hasChildNodes()) {
@@ -123,23 +151,34 @@ function _moveTo(element, dest=null) {
         }
     }
 
-    let x = dest.offsetLeft - element.offsetLeft ;
+    let x = dest.offsetLeft - element.offsetLeft;
     let y = dest.offsetTop - element.offsetTop;
 
-    element.style.transition = "0.5s";
+    console.log(x, y);
+
+    element.style.transition = '0.5s';
     element.style.transform = `translate(${x}px, ${y}px)`;
 
-    element.ontransitionend = (e) => {
+    element.ontransitionend = () => {
+        element.dataset.sticked = true;
         dest.appendChild(element);
-        element.dataset.x = 0;
-        element.dataset.y = 0;
-        element.style.transition = "none";
-        element.style.transform = "";
+        reset(element);
     }
 }
 
-function createSlot() {
-    let slot = document.createElement('div');
-    slot.className = 'slot';
-    return slot;
+function reset(element) {
+    element.dataset.x = 0;
+    element.dataset.y = 0;
+    element.style.transform = "none";
+    element.style.transition = "none";
+}
+
+function createElement(tag, attributes={}) {
+    let element = document.createElement(tag);
+
+    for (const [key, value] of Object.entries(attributes)) {
+        element.setAttribute(key, value);
+    }
+
+    return element;
 }
